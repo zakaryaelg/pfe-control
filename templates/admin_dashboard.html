@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% block title %}Admin - Tableau de bord{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Tableau de bord Administrateur</h1>
+    <p>Gestion du référentiel RFE et des utilisateurs</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-label">Utilisateurs total</div>
+        <div class="stat-value">{{ users_count }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Contrôleurs</div>
+        <div class="stat-value" style="color: var(--accent);">{{ controllers_count }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Administrateurs</div>
+        <div class="stat-value" style="color: var(--info);">{{ admins_count }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Règles référentiel</div>
+        <div class="stat-value" style="color: var(--warning);">36</div>
+        <div class="stat-meta">Art. 1 à 36</div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">Utilisateurs du système</div>
+        <a href="{{ url_for('create_user') }}" class="btn btn-success">+ Nouvel utilisateur</a>
+    </div>
+    
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Utilisateur</th>
+                <th>Nom complet</th>
+                <th>Email</th>
+                <th>Rôle</th>
+                <th>Statut</th>
+                <th>Dernière connexion</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td><strong>{{ user.username }}</strong></td>
+                <td>{{ user.full_name or '—' }}</td>
+                <td>{{ user.email }}</td>
+                <td>
+                    <span class="badge badge-{{ user.role }}">{{ user.role }}</span>
+                </td>
+                <td>
+                    {% if user.is_active %}
+                        <span style="color: var(--accent); font-size: 0.85rem;">● Actif</span>
+                    {% else %}
+                        <span style="color: var(--danger); font-size: 0.85rem;">● Inactif</span>
+                    {% endif %}
+                </td>
+                <td style="color: var(--text-muted); font-size: 0.85rem;">
+                    {{ user.last_login.strftime('%d/%m/%Y %H:%M') if user.last_login else 'Jamais' }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="card">
+    <div class="card-title" style="margin-bottom: 1rem;">Référentiel RFE</div>
+    <p style="color: var(--text-muted); margin-bottom: 1rem;">
+        Le référentiel digitalisé contient les 36 articles du Règlement n°06/2024/CM/UEMOA
+        sous forme de règles exécutables par le moteur de conformité.
+    </p>
+    <a href="#" class="btn btn-outline">Consulter les règles</a>
+    <a href="#" class="btn btn-outline">Rapports de conformité</a>
+</div>
+{% endblock %}

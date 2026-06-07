@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}Contrôleur - Exceptions{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>File d'attente des exceptions</h1>
+    <p>Transactions nécessitant une intervention manuelle</p>
+</div>
+
+{% if alerts %}
+    <div style="display: grid; gap: 1rem;">
+        {# Transaction cards will be rendered here #}
+    </div>
+{% else %}
+    <div class="card" style="text-align: center; padding: 4rem 2rem;">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">✓</div>
+        <h3 style="color: var(--accent); margin-bottom: 0.5rem;">Aucune alerte en attente</h3>
+        <p style="color: var(--text-muted); max-width: 500px; margin: 0 auto;">
+            Les transactions non conformes au référentiel RFE apparaîtront ici avec un code couleur :
+            <span style="color: var(--danger); font-weight: 600;">ROUGE</span> (bloqué),
+            <span style="color: var(--warning); font-weight: 600;">JAUNE</span> (en attente),
+            <span style="color: var(--accent); font-weight: 600;">VERT</span> (résolu).
+        </p>
+        <div style="margin-top: 2rem; padding: 1.5rem; background: #fafafa; border-radius: 8px; text-align: left; max-width: 600px; margin-left: auto; margin-right: auto;">
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;"><strong>Légende du référentiel :</strong></p>
+            <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.85rem;">
+                <span><span style="display: inline-block; width: 12px; height: 12px; background: var(--danger); border-radius: 50%; margin-right: 0.4rem;"></span>Violation bloquante</span>
+                <span><span style="display: inline-block; width: 12px; height: 12px; background: var(--warning); border-radius: 50%; margin-right: 0.4rem;"></span>Document manquant</span>
+                <span><span style="display: inline-block; width: 12px; height: 12px; background: var(--accent); border-radius: 50%; margin-right: 0.4rem;"></span>Contrôle validé</span>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}
