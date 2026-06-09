@@ -1,34 +1,217 @@
 {% extends 'base.html' %}
-{% block title %}Contrôleur - Exceptions{% endblock %}
+{% block title %}Contrôleur - Tableau de bord{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h1>File d'attente des exceptions</h1>
-    <p>Transactions nécessitant une intervention manuelle</p>
-</div>
-
-{% if alerts %}
-    <div style="display: grid; gap: 1rem;">
-        {# Transaction cards will be rendered here #}
+<div class="container">
+    <div class="page-header animate-in">
+        <div>
+            <h1><i class="fas fa-radar" style="color: var(--accent); margin-right: 0.35rem;"></i> Tableau de bord Contrôleur</h1>
+            <p>Surveillance en temps réel des alertes de conformité RFE</p>
+        </div>
+        <a href="{{ url_for('upload_transactions') }}" class="btn btn-primary">
+            <i class="fas fa-cloud-arrow-up"></i> Nouvelle évaluation
+        </a>
     </div>
-{% else %}
-    <div class="card" style="text-align: center; padding: 4rem 2rem;">
-        <div style="font-size: 3rem; margin-bottom: 1rem;">✓</div>
-        <h3 style="color: var(--accent); margin-bottom: 0.5rem;">Aucune alerte en attente</h3>
-        <p style="color: var(--text-muted); max-width: 500px; margin: 0 auto;">
-            Les transactions non conformes au référentiel RFE apparaîtront ici avec un code couleur :
-            <span style="color: var(--danger); font-weight: 600;">ROUGE</span> (bloqué),
-            <span style="color: var(--warning); font-weight: 600;">JAUNE</span> (en attente),
-            <span style="color: var(--accent); font-weight: 600;">VERT</span> (résolu).
-        </p>
-        <div style="margin-top: 2rem; padding: 1.5rem; background: #fafafa; border-radius: 8px; text-align: left; max-width: 600px; margin-left: auto; margin-right: auto;">
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;"><strong>Légende du référentiel :</strong></p>
-            <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.85rem;">
-                <span><span style="display: inline-block; width: 12px; height: 12px; background: var(--danger); border-radius: 50%; margin-right: 0.4rem;"></span>Violation bloquante</span>
-                <span><span style="display: inline-block; width: 12px; height: 12px; background: var(--warning); border-radius: 50%; margin-right: 0.4rem;"></span>Document manquant</span>
-                <span><span style="display: inline-block; width: 12px; height: 12px; background: var(--accent); border-radius: 50%; margin-right: 0.4rem;"></span>Contrôle validé</span>
-            </div>
+
+    <div class="stats-grid">
+        <div class="stat-card accent animate-in delay-1">
+            <div class="stat-icon"><i class="fas fa-bell"></i></div>
+            <div class="stat-label">Total alertes</div>
+            <div class="stat-value">{{ stats.total_alerts }}</div>
+        </div>
+        <div class="stat-card danger animate-in delay-2">
+            <div class="stat-icon"><i class="fas fa-circle-xmark"></i></div>
+            <div class="stat-label">Alertes rouges</div>
+            <div class="stat-value">{{ stats.new_red }}</div>
+            <div class="stat-meta"><i class="fas fa-ban"></i> Violations bloquantes</div>
+        </div>
+        <div class="stat-card warning animate-in delay-3">
+            <div class="stat-icon"><i class="fas fa-triangle-exclamation"></i></div>
+            <div class="stat-label">Alertes jaunes</div>
+            <div class="stat-value">{{ stats.new_yellow }}</div>
+            <div class="stat-meta"><i class="fas fa-file-circle-question"></i> Documents requis</div>
+        </div>
+        <div class="stat-card success animate-in delay-4">
+            <div class="stat-icon"><i class="fas fa-circle-check"></i></div>
+            <div class="stat-label">Résolues</div>
+            <div class="stat-value">{{ stats.resolved }}</div>
+            <div class="stat-meta"><i class="fas fa-check-double"></i> Traitées</div>
         </div>
     </div>
-{% endif %}
+
+    {% if red_alerts or yellow_alerts %}
+        {% if red_alerts %}
+        <div class="card animate-in delay-4" style="border-left: 4px solid var(--danger);">
+            <div class="card-header">
+                <div class="card-title" style="color: var(--danger);">
+                    <i class="fas fa-circle-xmark"></i> Alertes Rouges — Violations Bloquantes
+                </div>
+                <span class="badge" style="background: var(--danger-light); color: var(--danger); border: 1px solid rgba(239,68,68,0.2);">{{ red_alerts | length }}</span>
+            </div>
+            <div class="table-wrapper">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Client</th>
+                            <th>Règle</th>
+                            <th>Article</th>
+                            <th>Description</th>
+                            <th>Autorité</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for alert in red_alerts %}
+                        <tr>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <div style="width: 28px; height: 28px; border-radius: 6px; background: var(--danger-light); display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700; color: var(--danger);">
+                                        {{ alert.customer_name[:2] | upper if alert.customer_name else '??' }}
+                                    </div>
+                                    <div>
+                                        <div style="font-weight: 600; font-size: 0.85rem;">{{ alert.customer_name or alert.customer_id }}</div>
+                                        <div style="font-size: 0.75rem; color: var(--text-muted);">{{ alert.customer_id }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><code style="background: var(--bg-subtle); padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.78rem; color: var(--danger); border: 1px solid var(--border);">{{ alert.rule_id }}</code></td>
+                            <td style="font-weight: 600; font-size: 0.85rem;">{{ alert.article_ref }}</td>
+                            <td style="color: var(--text-secondary); font-size: 0.85rem; max-width: 250px;">{{ alert.violation_description | truncate(80) }}</td>
+                            <td>
+                                {% if alert.required_authority %}
+                                <span style="font-size: 0.78rem; background: var(--bg-subtle); padding: 0.2rem 0.6rem; border-radius: 6px; font-weight: 600; color: var(--text-secondary);">{{ alert.required_authority }}</span>
+                                {% else %}
+                                <span style="color: var(--text-muted);">—</span>
+                                {% endif %}
+                            </td>
+                            <td><span class="badge" style="background: var(--danger-light); color: var(--danger); border: 1px solid rgba(239,68,68,0.2);">{{ alert.alert_status }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if yellow_alerts %}
+        <div class="card animate-in delay-5" style="border-left: 4px solid var(--warning);">
+            <div class="card-header">
+                <div class="card-title" style="color: var(--warning);">
+                    <i class="fas fa-triangle-exclamation"></i> Alertes Jaunes — Documents / Autorisations
+                </div>
+                <span class="badge" style="background: var(--warning-light); color: #92400e; border: 1px solid rgba(245,158,11,0.2);">{{ yellow_alerts | length }}</span>
+            </div>
+            <div class="table-wrapper">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Client</th>
+                            <th>Règle</th>
+                            <th>Article</th>
+                            <th>Description</th>
+                            <th>Autorité</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for alert in yellow_alerts %}
+                        <tr>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <div style="width: 28px; height: 28px; border-radius: 6px; background: var(--warning-light); display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700; color: #92400e;">
+                                        {{ alert.customer_name[:2] | upper if alert.customer_name else '??' }}
+                                    </div>
+                                    <div>
+                                        <div style="font-weight: 600; font-size: 0.85rem;">{{ alert.customer_name or alert.customer_id }}</div>
+                                        <div style="font-size: 0.75rem; color: var(--text-muted);">{{ alert.customer_id }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><code style="background: var(--bg-subtle); padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.78rem; color: var(--warning); border: 1px solid var(--border);">{{ alert.rule_id }}</code></td>
+                            <td style="font-weight: 600; font-size: 0.85rem;">{{ alert.article_ref }}</td>
+                            <td style="color: var(--text-secondary); font-size: 0.85rem; max-width: 250px;">{{ alert.violation_description | truncate(80) }}</td>
+                            <td>
+                                {% if alert.required_authority %}
+                                <span style="font-size: 0.78rem; background: var(--bg-subtle); padding: 0.2rem 0.6rem; border-radius: 6px; font-weight: 600; color: var(--text-secondary);">{{ alert.required_authority }}</span>
+                                {% else %}
+                                <span style="color: var(--text-muted);">—</span>
+                                {% endif %}
+                            </td>
+                            <td><span class="badge" style="background: var(--warning-light); color: #92400e; border: 1px solid rgba(245,158,11,0.2);">{{ alert.alert_status }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if recent_green %}
+        <div class="card animate-in delay-5">
+            <div class="card-header">
+                <div class="card-title" style="color: var(--success);">
+                    <i class="fas fa-circle-check"></i> Transactions Conformes Récentes
+                </div>
+            </div>
+            <div class="table-wrapper">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID Transaction</th>
+                            <th>Client</th>
+                            <th>Type</th>
+                            <th>Montant</th>
+                            <th>Évalué le</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for txn in recent_green %}
+                        <tr>
+                            <td><code style="font-size: 0.75rem; color: var(--text-muted);">{{ txn.transaction_id[:8] }}…</code></td>
+                            <td style="font-weight: 600; font-size: 0.85rem;">{{ txn.customer_id }}</td>
+                            <td><span style="font-size: 0.78rem; background: var(--bg-subtle); padding: 0.2rem 0.6rem; border-radius: 6px; font-weight: 500;">{{ txn.event_type }}</span></td>
+                            <td style="font-weight: 600;">{{ "{:,.0f}".format(txn.amount) }} {{ txn.currency }}</td>
+                            <td style="color: var(--text-muted); font-size: 0.8rem;">{{ txn.evaluated_at.strftime('%d/%m/%Y %H:%M') if txn.evaluated_at else '—' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+    {% else %}
+        <div class="card animate-in delay-4">
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h3>Aucune alerte en attente</h3>
+                <p>
+                    Toutes les transactions sont conformes au référentiel RFE.
+                    Les violations détectées apparaîtront ici automatiquement après l'évaluation d'un fichier CSV.
+                </p>
+                <div style="margin-top: 1.5rem;">
+                    <a href="{{ url_for('upload_transactions') }}" class="btn btn-primary">
+                        <i class="fas fa-cloud-arrow-up"></i> Évaluer des transactions
+                    </a>
+                </div>
+                <div class="legend-box">
+                    <div class="legend-title">Légende du référentiel</div>
+                    <div class="legend-items">
+                        <div class="legend-item">
+                            <span class="legend-dot red"></span> Violation bloquante
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-dot yellow"></span> Document / autorisation requis
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-dot green"></span> Contrôle validé
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
 {% endblock %}

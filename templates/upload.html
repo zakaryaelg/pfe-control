@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+{% block title %}Upload Transactions{% endblock %}
+
+{% block extra_css %}
+<style>
+    .upload-zone {
+        border: 2px dashed var(--border);
+        border-radius: var(--radius-lg);
+        padding: 3rem 2rem;
+        text-align: center;
+        transition: var(--transition);
+        cursor: pointer;
+        position: relative;
+        background: var(--bg-subtle);
+    }
+
+    .upload-zone:hover {
+        border-color: var(--accent);
+        background: var(--accent-glow);
+    }
+
+    .upload-zone.dragover {
+        border-color: var(--accent);
+        background: var(--accent-glow);
+        transform: scale(1.01);
+    }
+
+    .upload-zone .upload-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, var(--accent-glow), rgba(139,92,246,0.1));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: var(--accent);
+        margin: 0 auto 1.25rem;
+        transition: var(--transition);
+    }
+
+    .upload-zone:hover .upload-icon {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 14px rgba(99,102,241,0.2);
+    }
+
+    .upload-zone h3 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 0.35rem;
+    }
+
+    .upload-zone p {
+        color: var(--text-muted);
+        font-size: 0.85rem;
+    }
+
+    .upload-zone input[type="file"] {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .csv-columns {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+        text-align: left;
+    }
+
+    .csv-col {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+    }
+
+    .csv-col code {
+        background: var(--card);
+        padding: 0.15rem 0.4rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-family: 'SF Mono', 'Fira Code', monospace;
+        color: var(--accent);
+        border: 1px solid var(--border);
+    }
+
+    .csv-col .required {
+        color: var(--danger);
+        font-weight: 700;
+        font-size: 0.65rem;
+    }
+
+    .csv-col .optional {
+        color: var(--text-muted);
+        font-weight: 500;
+        font-size: 0.65rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header animate-in">
+        <div>
+            <h1><i class="fas fa-cloud-arrow-up" style="color: var(--accent); margin-right: 0.35rem;"></i> Upload de Transactions</h1>
+            <p>Importer un fichier CSV pour évaluation automatique contre le référentiel RFE</p>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 1.5rem; align-items: start;">
+        <div class="card animate-in delay-1">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fas fa-file-csv"></i> Fichier de transactions
+                </div>
+            </div>
+            <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                {{ form.hidden_tag() }}
+                <div class="form-group">
+                    <div class="upload-zone" id="dropZone">
+                        <div class="upload-icon">
+                            <i class="fas fa-cloud-arrow-up"></i>
+                        </div>
+                        <h3>Glisser-déposer votre fichier CSV</h3>
+                        <p>ou cliquer pour sélectionner un fichier</p>
+                        <p id="fileName" style="margin-top: 0.75rem; font-weight: 600; color: var(--accent); display: none;"></p>
+                        {{ form.csv_file(id="fileInput") }}
+                    </div>
+                    {% for error in form.csv_file.errors %}
+                        <div class="form-error" style="margin-top: 0.75rem;">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    {{ form.submit(class="btn btn-primary", style="width: 100%; justify-content: center; padding: 0.8rem; font-size: 0.95rem;") }}
+                </div>
+            </form>
+        </div>
+
+        <div>
+            <div class="card animate-in delay-2">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-table-columns"></i> Format attendu
+                    </div>
+                </div>
+                <div class="csv-columns">
+                    <div class="csv-col"><code>customer_id</code> <span class="required">requis</span></div>
+                    <div class="csv-col"><code>event_type</code> <span class="required">requis</span></div>
+                    <div class="csv-col"><code>amount</code> <span class="required">requis</span></div>
+                    <div class="csv-col"><code>currency</code> <span class="required">requis</span></div>
+                    <div class="csv-col"><code>direction</code> <span class="required">requis</span></div>
+                    <div class="csv-col"><code>counterparty_country</code> <span class="required">requis</span></div>
+                    <div class="csv-col"><code>operation_category</code> <span class="optional">optionnel</span></div>
+                    <div class="csv-col"><code>account_type</code> <span class="optional">optionnel</span></div>
+                    <div class="csv-col"><code>weight_grams</code> <span class="optional">optionnel</span></div>
+                    <div class="csv-col"><code>actor_type</code> <span class="optional">optionnel</span></div>
+                </div>
+            </div>
+
+            <div class="card animate-in delay-3">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-circle-info"></i> Comment ça marche
+                    </div>
+                </div>
+                <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.8;">
+                    <div style="display: flex; gap: 0.75rem; align-items: flex-start; margin-bottom: 0.75rem;">
+                        <span style="background: var(--accent-glow); color: var(--accent); width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 800; flex-shrink: 0;">1</span>
+                        <span>Chaque ligne est parsée en transaction</span>
+                    </div>
+                    <div style="display: flex; gap: 0.75rem; align-items: flex-start; margin-bottom: 0.75rem;">
+                        <span style="background: var(--accent-glow); color: var(--accent); width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 800; flex-shrink: 0;">2</span>
+                        <span>Le moteur compare chaque transaction aux règles du référentiel</span>
+                    </div>
+                    <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+                        <span style="background: var(--accent-glow); color: var(--accent); width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 800; flex-shrink: 0;">3</span>
+                        <span>Un code couleur <span style="color: var(--success); font-weight: 600;">VERT</span> / <span style="color: var(--warning); font-weight: 600;">JAUNE</span> / <span style="color: var(--danger); font-weight: 600;">ROUGE</span> est attribué</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const fileName = document.getElementById('fileName');
+
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files.length) {
+            fileName.textContent = '📄 ' + fileInput.files[0].name;
+            fileName.style.display = 'block';
+        }
+    });
+
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        fileInput.files = e.dataTransfer.files;
+        if (fileInput.files.length) {
+            fileName.textContent = '📄 ' + fileInput.files[0].name;
+            fileName.style.display = 'block';
+        }
+    });
+</script>
+{% endblock %}

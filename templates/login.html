@@ -4,15 +4,21 @@
 {% block content %}
 <div class="login-page">
     <div class="login-card">
-        <h2>Connexion</h2>
-        <p class="subtitle">Règlement n°06/2024/CM/UEMOA — Contrôle des RFE</p>
+        <div class="login-icon">
+            <i class="fas fa-shield-halved"></i>
+        </div>
+        <h2>Bienvenue</h2>
+        <p class="subtitle">Plateforme de contrôle des Relations Financières Extérieures<br>Règlement n°06/2024/CM/UEMOA</p>
         
         <form method="POST" action="{{ url_for('login') }}" novalidate>
             {{ form.hidden_tag() }}
             
             <div class="form-group">
                 {{ form.username.label(class="form-label") }}
-                {{ form.username(class="form-control", placeholder="admin ou controller") }}
+                <div style="position: relative;">
+                    <i class="fas fa-user" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.85rem;"></i>
+                    {{ form.username(class="form-control", placeholder="Entrez votre identifiant", style="padding-left: 2.5rem;") }}
+                </div>
                 {% if form.username.errors %}
                     {% for error in form.username.errors %}
                         <div class="form-error">{{ error }}</div>
@@ -22,7 +28,10 @@
             
             <div class="form-group">
                 {{ form.password.label(class="form-label") }}
-                {{ form.password(class="form-control", placeholder="••••••") }}
+                <div style="position: relative;">
+                    <i class="fas fa-lock" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.85rem;"></i>
+                    {{ form.password(class="form-control", placeholder="••••••••", style="padding-left: 2.5rem;") }}
+                </div>
                 {% if form.password.errors %}
                     {% for error in form.password.errors %}
                         <div class="form-error">{{ error }}</div>
@@ -38,12 +47,12 @@
             </div>
             
             <div class="form-group">
-                {{ form.submit(class="btn btn-primary", style="width: 100%; justify-content: center;") }}
+                {{ form.submit(class="btn btn-primary", style="width: 100%; justify-content: center; padding: 0.8rem; font-size: 0.95rem;") }}
             </div>
         </form>
         
         <div class="login-footer">
-            Comptes de démonstration<br>
+            <i class="fas fa-info-circle" style="margin-right: 0.25rem;"></i> Comptes de démonstration<br>
             <code>admin / admin123</code> &nbsp;•&nbsp; <code>controller / ctrl123</code>
         </div>
     </div>

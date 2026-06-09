@@ -2,80 +2,120 @@
 {% block title %}Admin - Tableau de bord{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h1>Tableau de bord Administrateur</h1>
-    <p>Gestion du référentiel RFE et des utilisateurs</p>
-</div>
+<div class="container">
+    <div class="page-header animate-in">
+        <div>
+            <h1><i class="fas fa-gauge-high" style="color: var(--accent); margin-right: 0.35rem;"></i> Tableau de bord</h1>
+            <p>Gestion du référentiel RFE et des utilisateurs</p>
+        </div>
+        <a href="{{ url_for('create_user') }}" class="btn btn-success">
+            <i class="fas fa-user-plus"></i> Nouvel utilisateur
+        </a>
+    </div>
 
-<div class="stats-grid">
-    <div class="stat-card">
-        <div class="stat-label">Utilisateurs total</div>
-        <div class="stat-value">{{ users_count }}</div>
+    <div class="stats-grid">
+        <div class="stat-card accent animate-in delay-1">
+            <div class="stat-icon"><i class="fas fa-users"></i></div>
+            <div class="stat-label">Utilisateurs total</div>
+            <div class="stat-value">{{ users_count }}</div>
+            <div class="stat-meta"><i class="fas fa-circle-info"></i> Tous les comptes actifs</div>
+        </div>
+        <div class="stat-card success animate-in delay-2">
+            <div class="stat-icon"><i class="fas fa-user-check"></i></div>
+            <div class="stat-label">Contrôleurs</div>
+            <div class="stat-value">{{ controllers_count }}</div>
+            <div class="stat-meta"><i class="fas fa-shield-halved"></i> Agents de conformité</div>
+        </div>
+        <div class="stat-card info animate-in delay-3">
+            <div class="stat-icon"><i class="fas fa-user-gear"></i></div>
+            <div class="stat-label">Administrateurs</div>
+            <div class="stat-value">{{ admins_count }}</div>
+            <div class="stat-meta"><i class="fas fa-key"></i> Accès complet</div>
+        </div>
+        <div class="stat-card warning animate-in delay-4">
+            <div class="stat-icon"><i class="fas fa-scale-balanced"></i></div>
+            <div class="stat-label">Règles actives</div>
+            <div class="stat-value">{{ rules_count }}</div>
+            <div class="stat-meta"><i class="fas fa-gavel"></i> Référentiel RFE</div>
+        </div>
     </div>
-    <div class="stat-card">
-        <div class="stat-label">Contrôleurs</div>
-        <div class="stat-value" style="color: var(--accent);">{{ controllers_count }}</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">Administrateurs</div>
-        <div class="stat-value" style="color: var(--info);">{{ admins_count }}</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">Règles référentiel</div>
-        <div class="stat-value" style="color: var(--warning);">36</div>
-        <div class="stat-meta">Art. 1 à 36</div>
-    </div>
-</div>
 
-<div class="card">
-    <div class="card-header">
-        <div class="card-title">Utilisateurs du système</div>
-        <a href="{{ url_for('create_user') }}" class="btn btn-success">+ Nouvel utilisateur</a>
+    <div class="card animate-in delay-4">
+        <div class="card-header">
+            <div class="card-title">
+                <i class="fas fa-users-gear"></i> Utilisateurs du système
+            </div>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">{{ users | length }} enregistrement(s)</span>
+        </div>
+        
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Utilisateur</th>
+                        <th>Nom complet</th>
+                        <th>Email</th>
+                        <th>Rôle</th>
+                        <th>Statut</th>
+                        <th>Dernière connexion</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 0.6rem;">
+                                <div style="width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, var(--accent-glow), rgba(139,92,246,0.1)); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: var(--accent);">
+                                    {{ user.username[:2] | upper }}
+                                </div>
+                                <strong style="font-weight: 600;">{{ user.username }}</strong>
+                            </div>
+                        </td>
+                        <td style="color: var(--text-secondary);">{{ user.full_name or '—' }}</td>
+                        <td style="color: var(--text-secondary);">{{ user.email }}</td>
+                        <td>
+                            <span class="badge badge-{{ user.role }}">
+                                <i class="fas fa-{{ 'crown' if user.role == 'admin' else 'shield-halved' }}" style="margin-right: 0.25rem; font-size: 0.55rem;"></i>
+                                {{ user.role }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if user.is_active %}
+                                <span class="status-dot active">Actif</span>
+                            {% else %}
+                                <span class="status-dot inactive">Inactif</span>
+                            {% endif %}
+                        </td>
+                        <td style="color: var(--text-muted); font-size: 0.8rem;">
+                            {% if user.last_login %}
+                                <i class="fas fa-clock" style="margin-right: 0.3rem;"></i>
+                                {{ user.last_login.strftime('%d/%m/%Y %H:%M') }}
+                            {% else %}
+                                <span style="opacity: 0.5;">Jamais</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
-    
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Utilisateur</th>
-                <th>Nom complet</th>
-                <th>Email</th>
-                <th>Rôle</th>
-                <th>Statut</th>
-                <th>Dernière connexion</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for user in users %}
-            <tr>
-                <td><strong>{{ user.username }}</strong></td>
-                <td>{{ user.full_name or '—' }}</td>
-                <td>{{ user.email }}</td>
-                <td>
-                    <span class="badge badge-{{ user.role }}">{{ user.role }}</span>
-                </td>
-                <td>
-                    {% if user.is_active %}
-                        <span style="color: var(--accent); font-size: 0.85rem;">● Actif</span>
-                    {% else %}
-                        <span style="color: var(--danger); font-size: 0.85rem;">● Inactif</span>
-                    {% endif %}
-                </td>
-                <td style="color: var(--text-muted); font-size: 0.85rem;">
-                    {{ user.last_login.strftime('%d/%m/%Y %H:%M') if user.last_login else 'Jamais' }}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
 
-<div class="card">
-    <div class="card-title" style="margin-bottom: 1rem;">Référentiel RFE</div>
-    <p style="color: var(--text-muted); margin-bottom: 1rem;">
-        Le référentiel digitalisé contient les 36 articles du Règlement n°06/2024/CM/UEMOA
-        sous forme de règles exécutables par le moteur de conformité.
-    </p>
-    <a href="#" class="btn btn-outline">Consulter les règles</a>
-    <a href="#" class="btn btn-outline">Rapports de conformité</a>
+    <div class="card animate-in delay-5">
+        <div class="card-header">
+            <div class="card-title">
+                <i class="fas fa-book-open"></i> Référentiel RFE
+            </div>
+        </div>
+        <p style="color: var(--text-secondary); margin-bottom: 1.25rem; font-size: 0.9rem; line-height: 1.7;">
+            Le référentiel digitalisé contient les 36 articles du Règlement n°06/2024/CM/UEMOA
+            sous forme de règles exécutables par le moteur de conformité automatisé.
+        </p>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <a href="#" class="btn btn-outline"><i class="fas fa-list-check"></i> Consulter les règles</a>
+            <a href="#" class="btn btn-outline"><i class="fas fa-chart-bar"></i> Rapports de conformité</a>
+            <a href="{{ url_for('upload_transactions') }}" class="btn btn-outline"><i class="fas fa-cloud-arrow-up"></i> Évaluer des transactions</a>
+        </div>
+    </div>
 </div>
 {% endblock %}
