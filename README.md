@@ -8,14 +8,13 @@ Transformer un document réglementaire de 17 pages en un **système de conformit
 
 ## Architecture
 - **Backend** : Flask + SQLAlchemy + WTForms
-- **Base de données** : SQLite (PostgreSQL-ready)
+- **Base de données** : SQLite 
 - **Règles** : Moteur JSON/DB avec 36 articles digitalisés
 - **Frontend** : Jinja2 + CSS vanilla
 
 ## Fonctionnalités
 1. Automatisation : Évaluation automatique des transactions contre le référentiel
 2. Exceptions : Dashboard contrôleur avec alertes colorées (RED/YELLOW)
-3. Outils complémentaires : Arbre de décision HTML + Excel
 4.Audit : Traçabilité complète des décisions
 
 ## Démarrage
