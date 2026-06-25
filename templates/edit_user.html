@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% block title %}Modifier {{ user.username }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header animate-in">
+        <div>
+            <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">
+                <a href="{{ url_for('admin_dashboard') }}" style="color:var(--text-muted);font-size:0.85rem;text-decoration:none;">
+                    <i class="fas fa-arrow-left"></i> Tableau de bord
+                </a>
+                <span style="color:var(--border)">/</span>
+                <span style="color:var(--text-muted);font-size:0.85rem;">Modifier utilisateur</span>
+            </div>
+            <h1><i class="fas fa-user-gear" style="color:var(--accent);margin-right:0.4rem;"></i> Modifier {{ user.username }}</h1>
+            <p>Mettre à jour les informations et les droits d'accès</p>
+        </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 2fr;gap:1.5rem;align-items:start;">
+
+        <!-- User card -->
+        <div class="card animate-in delay-1">
+            <div style="text-align:center;padding:1rem 0;">
+                <div style="width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,var(--accent),#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:800;color:white;margin:0 auto 1rem;box-shadow:0 4px 14px rgba(99,102,241,0.35);">
+                    {{ user.username[:2] | upper }}
+                </div>
+                <div style="font-weight:700;font-size:1.1rem;">{{ user.full_name or user.username }}</div>
+                <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.75rem;">{{ user.email }}</div>
+                <span class="badge badge-{{ user.role }}">
+                    <i class="fas fa-{{ 'crown' if user.role == 'admin' else 'shield-halved' }}" style="margin-right:0.25rem;"></i>
+                    {{ user.role }}
+                </span>
+            </div>
+            <div style="border-top:1px solid var(--border-light);padding-top:1rem;margin-top:0.5rem;">
+                <div style="display:flex;flex-direction:column;gap:0.6rem;font-size:0.82rem;">
+                    <div style="display:flex;justify-content:space-between;">
+                        <span style="color:var(--text-muted);">Créé le</span>
+                        <span style="font-weight:600;">{{ user.created_at.strftime('%d/%m/%Y') if user.created_at else '—' }}</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;">
+                        <span style="color:var(--text-muted);">Dernière connexion</span>
+                        <span style="font-weight:600;">{{ user.last_login.strftime('%d/%m/%Y') if user.last_login else 'Jamais' }}</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;">
+                        <span style="color:var(--text-muted);">Statut</span>
+                        <span class="status-dot {{ 'active' if user.is_active else 'inactive' }}">
+                            {{ 'Actif' if user.is_active else 'Inactif' }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit form -->
+        <div class="card animate-in delay-2">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-pen"></i> Modifier les informations</div>
+            </div>
+            <form method="POST" action="{{ url_for('edit_user', user_id=user.id) }}">
+                {{ form.hidden_tag() }}
+                <div class="form-group">
+                    <label class="form-label" for="full_name">{{ form.full_name.label.text }}</label>
+                    {{ form.full_name(class="form-control", id="full_name", placeholder="Nom complet") }}
+                    {% for err in form.full_name.errors %}
+                        <div class="form-error">{{ err }}</div>
+                    {% endfor %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="email">{{ form.email.label.text }}</label>
+                    {{ form.email(class="form-control", id="email", placeholder="adresse@email.com") }}
+                    {% for err in form.email.errors %}
+                        <div class="form-error">{{ err }}</div>
+                    {% endfor %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="role">{{ form.role.label.text }}</label>
+                    {{ form.role(class="form-control", id="role") }}
+                    {% for err in form.role.errors %}
+                        <div class="form-error">{{ err }}</div>
+                    {% endfor %}
+                </div>
+
+                <!-- Active toggle -->
+                <div class="form-group">
+                    <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg-subtle);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;">
+                        <div>
+                            <div style="font-weight:600;font-size:0.9rem;">Compte actif</div>
+                            <div style="font-size:0.8rem;color:var(--text-muted);margin-top:0.15rem;">Décocher pour désactiver l'accès sans supprimer le compte</div>
+                        </div>
+                        <label style="position:relative;display:inline-block;width:48px;height:26px;cursor:pointer;">
+                            {{ form.is_active(id="is_active", style="opacity:0;width:0;height:0;position:absolute;") }}
+                            <span id="toggleTrack" style="position:absolute;top:0;left:0;right:0;bottom:0;background:{% if user.is_active %}var(--success){% else %}var(--border){% endif %};border-radius:100px;transition:0.3s;"></span>
+                            <span id="toggleThumb" style="position:absolute;top:3px;left:{% if user.is_active %}25px{% else %}3px{% endif %};width:20px;height:20px;background:white;border-radius:50%;transition:0.3s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div style="display:flex;gap:0.75rem;margin-top:1rem;">
+                    {{ form.submit(class="btn btn-primary", style="flex:1;justify-content:center;") }}
+                    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline">Annuler</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+const checkbox = document.getElementById('is_active');
+const track = document.getElementById('toggleTrack');
+const thumb = document.getElementById('toggleThumb');
+
+checkbox.addEventListener('change', () => {
+    track.style.background = checkbox.checked ? 'var(--success)' : 'var(--border)';
+    thumb.style.left = checkbox.checked ? '25px' : '3px';
+});
+
+// Set initial state
+if (checkbox.checked) {
+    track.style.background = 'var(--success)';
+    thumb.style.left = '25px';
+}
+</script>
+{% endblock %}

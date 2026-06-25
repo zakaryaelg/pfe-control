@@ -58,6 +58,7 @@
                         <th>Rôle</th>
                         <th>Statut</th>
                         <th>Dernière connexion</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -94,6 +95,11 @@
                                 <span style="opacity: 0.5;">Jamais</span>
                             {% endif %}
                         </td>
+                        <td>
+                            <a href="{{ url_for('edit_user', user_id=user.id) }}" class="btn btn-ghost" style="font-size:0.78rem;padding:0.3rem 0.65rem;" title="Modifier">
+                                <i class="fas fa-pen"></i>
+                            </a>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -112,8 +118,8 @@
             sous forme de règles exécutables par le moteur de conformité automatisé.
         </p>
         <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-            <a href="#" class="btn btn-outline"><i class="fas fa-list-check"></i> Consulter les règles</a>
-            <a href="#" class="btn btn-outline"><i class="fas fa-chart-bar"></i> Rapports de conformité</a>
+            <a href="{{ url_for('rules_browser') }}" class="btn btn-outline"><i class="fas fa-list-check"></i> Consulter les règles</a>
+            <a href="{{ url_for('reports') }}" class="btn btn-outline"><i class="fas fa-chart-bar"></i> Rapports de conformité</a>
             <a href="{{ url_for('upload_transactions') }}" class="btn btn-outline"><i class="fas fa-cloud-arrow-up"></i> Évaluer des transactions</a>
         </div>
     </div>

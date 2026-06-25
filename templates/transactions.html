@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+{% block title %}Transactions — RFE Control{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header animate-in">
+        <div>
+            <h1><i class="fas fa-list-alt" style="color:var(--accent);margin-right:0.4rem;"></i> Transactions</h1>
+            <p>Historique complet des transactions évaluées par le moteur RFE</p>
+        </div>
+        <a href="{{ url_for('upload_transactions') }}" class="btn btn-primary">
+            <i class="fas fa-cloud-arrow-up"></i> Nouvelle évaluation
+        </a>
+    </div>
+
+    <!-- Filters -->
+    <div class="card animate-in delay-1" style="margin-bottom:1.5rem;">
+        <form method="GET" action="{{ url_for('transactions') }}" style="display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end;">
+            <div style="flex:1;min-width:160px;">
+                <label class="form-label">Statut</label>
+                <select name="status" class="form-control">
+                    <option value="">Tous les statuts</option>
+                    <option value="GREEN" {% if status_filter == 'GREEN' %}selected{% endif %}>🟢 Conforme</option>
+                    <option value="YELLOW" {% if status_filter == 'YELLOW' %}selected{% endif %}>🟡 Avertissement</option>
+                    <option value="RED" {% if status_filter == 'RED' %}selected{% endif %}>🔴 Bloqué</option>
+                    <option value="PENDING" {% if status_filter == 'PENDING' %}selected{% endif %}>⏳ En attente</option>
+                </select>
+            </div>
+            <div style="flex:1;min-width:160px;">
+                <label class="form-label">Type d'événement</label>
+                <select name="event_type" class="form-control">
+                    <option value="">Tous les types</option>
+                    {% for et in event_types %}
+                    <option value="{{ et }}" {% if event_filter == et %}selected{% endif %}>{{ et }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div style="flex:1;min-width:180px;">
+                <label class="form-label">Client (ID)</label>
+                <input type="text" name="customer_id" class="form-control" placeholder="CLI001…" value="{{ customer_filter }}">
+            </div>
+            <div style="display:flex;gap:0.5rem;">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Filtrer</button>
+                <a href="{{ url_for('transactions') }}" class="btn btn-outline"><i class="fas fa-times"></i></a>
+            </div>
+        </form>
+    </div>
+
+    <div class="card animate-in delay-2">
+        <div class="card-header">
+            <div class="card-title"><i class="fas fa-table"></i> Résultats</div>
+            <span style="font-size:0.8rem;color:var(--text-muted);">{{ pagination.total }} transaction(s)</span>
+        </div>
+
+        {% if pagination.items %}
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID Transaction</th>
+                        <th>Client</th>
+                        <th>Type</th>
+                        <th>Montant</th>
+                        <th>Direction</th>
+                        <th>Statut</th>
+                        <th>Évalué le</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for txn in pagination.items %}
+                    <tr style="cursor:pointer;" onclick="window.location='{{ url_for('transaction_detail', transaction_id=txn.transaction_id) }}'">
+                        <td><code style="font-size:0.73rem;color:var(--text-muted);">{{ txn.transaction_id[:12] }}…</code></td>
+                        <td>
+                            <div style="font-weight:600;font-size:0.85rem;">{{ txn.customer_id }}</div>
+                            {% if txn.customer %}
+                            <div style="font-size:0.73rem;color:var(--text-muted);">{{ txn.customer.name }}</div>
+                            {% endif %}
+                        </td>
+                        <td><span style="background:var(--bg-subtle);padding:0.2rem 0.6rem;border-radius:6px;font-size:0.78rem;font-weight:500;">{{ txn.event_type }}</span></td>
+                        <td style="font-weight:600;">
+                            {% if txn.amount %}{{ "{:,.0f}".format(txn.amount) }} <span style="color:var(--text-muted);font-size:0.78rem;">{{ txn.currency }}</span>{% else %}—{% endif %}
+                        </td>
+                        <td style="font-size:0.83rem;">{{ txn.direction or '—' }}</td>
+                        <td>
+                            {% if txn.status == 'GREEN' %}
+                                <span class="badge" style="background:var(--success-light);color:var(--success);border:1px solid rgba(16,185,129,0.2);">✓ CONFORME</span>
+                            {% elif txn.status == 'RED' %}
+                                <span class="badge" style="background:var(--danger-light);color:var(--danger);border:1px solid rgba(239,68,68,0.2);">✗ BLOQUÉ</span>
+                            {% elif txn.status == 'YELLOW' %}
+                                <span class="badge" style="background:var(--warning-light);color:#92400e;border:1px solid rgba(245,158,11,0.2);">⚠ AVERTISSEMENT</span>
+                            {% else %}
+                                <span class="badge" style="background:var(--bg-subtle);color:var(--text-muted);border:1px solid var(--border);">{{ txn.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td style="font-size:0.78rem;color:var(--text-muted);">{{ txn.evaluated_at.strftime('%d/%m/%Y %H:%M') if txn.evaluated_at else '—' }}</td>
+                        <td>
+                            <a href="{{ url_for('transaction_detail', transaction_id=txn.transaction_id) }}" class="btn btn-ghost" style="font-size:0.75rem;padding:0.3rem 0.6rem;" onclick="event.stopPropagation()">
+                                <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if pagination.pages > 1 %}
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border-light);">
+            <div style="font-size:0.82rem;color:var(--text-muted);">
+                Page {{ pagination.page }} sur {{ pagination.pages }}
+            </div>
+            <div style="display:flex;gap:0.4rem;">
+                {% if pagination.has_prev %}
+                <a href="{{ url_for('transactions', page=pagination.prev_num, status=status_filter, event_type=event_filter, customer_id=customer_filter) }}" class="btn btn-outline" style="padding:0.4rem 0.75rem;font-size:0.8rem;">
+                    <i class="fas fa-chevron-left"></i> Préc.
+                </a>
+                {% endif %}
+                {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if p %}
+                    <a href="{{ url_for('transactions', page=p, status=status_filter, event_type=event_filter, customer_id=customer_filter) }}"
+                       class="btn {{ 'btn-primary' if p == pagination.page else 'btn-outline' }}"
+                       style="padding:0.4rem 0.75rem;font-size:0.8rem;min-width:36px;justify-content:center;">{{ p }}</a>
+                    {% else %}
+                    <span style="padding:0.4rem 0.5rem;color:var(--text-muted);">…</span>
+                    {% endif %}
+                {% endfor %}
+                {% if pagination.has_next %}
+                <a href="{{ url_for('transactions', page=pagination.next_num, status=status_filter, event_type=event_filter, customer_id=customer_filter) }}" class="btn btn-outline" style="padding:0.4rem 0.75rem;font-size:0.8rem;">
+                    Suiv. <i class="fas fa-chevron-right"></i>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon" style="background:var(--bg-subtle);"><i class="fas fa-inbox" style="color:var(--text-muted);"></i></div>
+            <h3>Aucune transaction trouvée</h3>
+            <p>Modifiez vos filtres ou uploadez un fichier CSV pour commencer l'évaluation.</p>
+            <div style="margin-top:1.5rem;">
+                <a href="{{ url_for('upload_transactions') }}" class="btn btn-primary"><i class="fas fa-cloud-arrow-up"></i> Évaluer des transactions</a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

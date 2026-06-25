@@ -58,6 +58,7 @@
                             <th>Description</th>
                             <th>Autorité</th>
                             <th>Statut</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -85,6 +86,11 @@
                                 {% endif %}
                             </td>
                             <td><span class="badge" style="background: var(--danger-light); color: var(--danger); border: 1px solid rgba(239,68,68,0.2);">{{ alert.alert_status }}</span></td>
+                            <td>
+                                <a href="{{ url_for('alert_detail', alert_id=alert.alert_id) }}" class="btn btn-ghost" style="font-size:0.78rem;padding:0.3rem 0.6rem;" title="Instruire">
+                                    <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -111,6 +117,7 @@
                             <th>Description</th>
                             <th>Autorité</th>
                             <th>Statut</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -138,6 +145,11 @@
                                 {% endif %}
                             </td>
                             <td><span class="badge" style="background: var(--warning-light); color: #92400e; border: 1px solid rgba(245,158,11,0.2);">{{ alert.alert_status }}</span></td>
+                            <td>
+                                <a href="{{ url_for('alert_detail', alert_id=alert.alert_id) }}" class="btn btn-ghost" style="font-size:0.78rem;padding:0.3rem 0.6rem;" title="Instruire">
+                                    <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -152,6 +164,7 @@
                 <div class="card-title" style="color: var(--success);">
                     <i class="fas fa-circle-check"></i> Transactions Conformes Récentes
                 </div>
+                <a href="{{ url_for('transactions', status='GREEN') }}" style="font-size:0.8rem;color:var(--accent);text-decoration:none;font-weight:600;">Voir toutes <i class="fas fa-arrow-right" style="font-size:0.7rem;"></i></a>
             </div>
             <div class="table-wrapper">
                 <table class="table">

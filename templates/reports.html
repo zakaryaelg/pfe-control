@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+{% block title %}Rapports de conformité — RFE{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chart-container { position:relative; height:240px; }
+    .progress-bar-wrap { background:var(--bg-subtle); border-radius:100px; height:8px; overflow:hidden; margin-top:0.5rem; }
+    .progress-bar-fill { height:100%; border-radius:100px; transition: width 1s cubic-bezier(0.4,0,0.2,1); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header animate-in">
+        <div>
+            <h1><i class="fas fa-chart-bar" style="color:var(--accent);margin-right:0.4rem;"></i> Rapports de conformité</h1>
+            <p>Tableau de bord analytique du référentiel RFE — Règlement n°06/2024/CM/UEMOA</p>
+        </div>
+        <a href="{{ url_for('upload_transactions') }}" class="btn btn-primary">
+            <i class="fas fa-cloud-arrow-up"></i> Nouvelle évaluation
+        </a>
+    </div>
+
+    <!-- Top KPIs -->
+    <div class="stats-grid animate-in delay-1">
+        <div class="stat-card accent">
+            <div class="stat-icon"><i class="fas fa-receipt"></i></div>
+            <div class="stat-label">Transactions totales</div>
+            <div class="stat-value">{{ total_txn }}</div>
+            <div class="stat-meta"><i class="fas fa-circle-info"></i> Évaluées par le moteur</div>
+        </div>
+        <div class="stat-card success">
+            <div class="stat-icon"><i class="fas fa-circle-check"></i></div>
+            <div class="stat-label">Conformes</div>
+            <div class="stat-value">{{ green_count }}</div>
+            <div class="stat-meta"><i class="fas fa-check-double"></i> {% if total_txn > 0 %}{{ "%.1f"|format(green_count/total_txn*100) }}%{% else %}—{% endif %} du total</div>
+        </div>
+        <div class="stat-card danger">
+            <div class="stat-icon"><i class="fas fa-circle-xmark"></i></div>
+            <div class="stat-label">Bloquées</div>
+            <div class="stat-value">{{ red_count }}</div>
+            <div class="stat-meta"><i class="fas fa-ban"></i> {% if total_txn > 0 %}{{ "%.1f"|format(red_count/total_txn*100) }}%{% else %}—{% endif %} du total</div>
+        </div>
+        <div class="stat-card warning">
+            <div class="stat-icon"><i class="fas fa-triangle-exclamation"></i></div>
+            <div class="stat-label">En avertissement</div>
+            <div class="stat-value">{{ yellow_count }}</div>
+            <div class="stat-meta"><i class="fas fa-file-circle-question"></i> {% if total_txn > 0 %}{{ "%.1f"|format(yellow_count/total_txn*100) }}%{% else %}—{% endif %} du total</div>
+        </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem;">
+
+        <!-- Donut chart: transaction status -->
+        <div class="card animate-in delay-2">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-chart-pie"></i> Répartition des transactions</div>
+            </div>
+            {% if total_txn > 0 %}
+            <div class="chart-container">
+                <canvas id="txnChart"></canvas>
+            </div>
+            {% else %}
+            <div class="empty-state" style="padding:2rem;">
+                <div class="empty-icon" style="background:var(--bg-subtle);width:56px;height:56px;font-size:1.3rem;"><i class="fas fa-chart-pie" style="color:var(--text-muted);"></i></div>
+                <h3 style="font-size:1rem;">Aucune donnée</h3>
+                <p style="font-size:0.82rem;">Uploadez un fichier CSV pour générer des statistiques.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Bar chart: alerts status -->
+        <div class="card animate-in delay-2">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-chart-bar"></i> État des alertes</div>
+            </div>
+            <div class="chart-container">
+                <canvas id="alertChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem;">
+
+        <!-- Alert resolution rate -->
+        <div class="card animate-in delay-3">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-gauge-high"></i> Taux de résolution</div>
+            </div>
+            {% set total_alerts = alerts_new + alerts_pending + alerts_resolved %}
+            <div style="display:flex;flex-direction:column;gap:1.25rem;">
+                <div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.83rem;margin-bottom:0.4rem;">
+                        <span style="color:var(--success);font-weight:600;"><i class="fas fa-check-circle"></i> Résolues</span>
+                        <span style="font-weight:700;">{{ alerts_resolved }} {% if total_alerts > 0 %}<span style="color:var(--text-muted);font-weight:400;">({{ "%.0f"|format(alerts_resolved/total_alerts*100) }}%)</span>{% endif %}</span>
+                    </div>
+                    <div class="progress-bar-wrap">
+                        <div class="progress-bar-fill" style="width:{% if total_alerts > 0 %}{{ (alerts_resolved/total_alerts*100)|round|int }}{% else %}0{% endif %}%;background:var(--success);"></div>
+                    </div>
+                </div>
+                <div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.83rem;margin-bottom:0.4rem;">
+                        <span style="color:var(--warning);font-weight:600;"><i class="fas fa-clock"></i> En attente</span>
+                        <span style="font-weight:700;">{{ alerts_pending }} {% if total_alerts > 0 %}<span style="color:var(--text-muted);font-weight:400;">({{ "%.0f"|format(alerts_pending/total_alerts*100) }}%)</span>{% endif %}</span>
+                    </div>
+                    <div class="progress-bar-wrap">
+                        <div class="progress-bar-fill" style="width:{% if total_alerts > 0 %}{{ (alerts_pending/total_alerts*100)|round|int }}{% else %}0{% endif %}%;background:var(--warning);"></div>
+                    </div>
+                </div>
+                <div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.83rem;margin-bottom:0.4rem;">
+                        <span style="color:var(--danger);font-weight:600;"><i class="fas fa-bell"></i> Nouvelles</span>
+                        <span style="font-weight:700;">{{ alerts_new }} {% if total_alerts > 0 %}<span style="color:var(--text-muted);font-weight:400;">({{ "%.0f"|format(alerts_new/total_alerts*100) }}%)</span>{% endif %}</span>
+                    </div>
+                    <div class="progress-bar-wrap">
+                        <div class="progress-bar-fill" style="width:{% if total_alerts > 0 %}{{ (alerts_new/total_alerts*100)|round|int }}{% else %}0{% endif %}%;background:var(--danger);"></div>
+                    </div>
+                </div>
+                <div style="background:var(--bg-subtle);border-radius:var(--radius);padding:1rem;text-align:center;border:1px solid var(--border-light);">
+                    <div style="font-size:2rem;font-weight:800;color:{% if total_alerts > 0 and alerts_resolved/total_alerts > 0.7 %}var(--success){% elif total_alerts > 0 %}var(--warning){% else %}var(--text-muted){% endif %};">
+                        {% if total_alerts > 0 %}{{ "%.0f"|format(alerts_resolved/total_alerts*100) }}%{% else %}—{% endif %}
+                    </div>
+                    <div style="font-size:0.8rem;color:var(--text-muted);">taux de résolution global</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top violated rules -->
+        <div class="card animate-in delay-3">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-fire"></i> Règles les plus violées</div>
+            </div>
+            {% if top_rules %}
+            <div style="display:flex;flex-direction:column;gap:0.75rem;">
+                {% for rule_id, article_ref, cnt in top_rules %}
+                <div style="display:flex;align-items:center;gap:0.75rem;">
+                    <div style="flex:1;">
+                        <div style="display:flex;justify-content:space-between;margin-bottom:0.3rem;">
+                            <div style="display:flex;gap:0.4rem;align-items:center;">
+                                <code style="background:var(--bg-subtle);padding:0.1rem 0.4rem;border-radius:4px;font-size:0.72rem;color:var(--danger);border:1px solid var(--border);">{{ rule_id }}</code>
+                                <span style="font-size:0.75rem;color:var(--text-muted);">{{ article_ref }}</span>
+                            </div>
+                            <span style="font-weight:700;font-size:0.85rem;">{{ cnt }}</span>
+                        </div>
+                        <div class="progress-bar-wrap" style="height:6px;">
+                            <div class="progress-bar-fill" style="width:{{ ((cnt / top_rules[0][2]) * 100)|round|int }}%;background:linear-gradient(90deg,var(--danger),#f87171);"></div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align:center;padding:2rem;color:var(--text-muted);">
+                <i class="fas fa-check-circle" style="font-size:1.5rem;color:var(--success);margin-bottom:0.5rem;"></i>
+                <p style="font-size:0.85rem;">Aucune violation enregistrée.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent resolved alerts -->
+    {% if recent_resolved %}
+    <div class="card animate-in delay-4">
+        <div class="card-header">
+            <div class="card-title"><i class="fas fa-history"></i> Alertes récemment résolues</div>
+            <span style="font-size:0.8rem;color:var(--text-muted);">{{ recent_resolved | length }} dernière(s)</span>
+        </div>
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Client</th>
+                        <th>Règle</th>
+                        <th>Décision</th>
+                        <th>Décidé par</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in recent_resolved %}
+                    <tr>
+                        <td>
+                            <div style="font-weight:600;font-size:0.85rem;">{{ a.customer_name or a.customer_id }}</div>
+                            <div style="font-size:0.73rem;color:var(--text-muted);">{{ a.customer_id }}</div>
+                        </td>
+                        <td>
+                            <code style="background:var(--bg-subtle);padding:0.15rem 0.4rem;border-radius:4px;font-size:0.75rem;color:var(--accent);border:1px solid var(--border);">{{ a.rule_id }}</code>
+                        </td>
+                        <td>
+                            <span class="badge" style="{% if a.controller_decision == 'APPROVED' %}background:var(--success-light);color:var(--success);border:1px solid rgba(16,185,129,0.2);{% else %}background:var(--danger-light);color:var(--danger);border:1px solid rgba(239,68,68,0.2);{% endif %}">
+                                {{ a.controller_decision }}
+                            </span>
+                        </td>
+                        <td style="font-size:0.83rem;font-weight:600;">{{ a.decided_by or '—' }}</td>
+                        <td style="font-size:0.78rem;color:var(--text-muted);">{{ a.decided_at.strftime('%d/%m/%Y %H:%M') if a.decided_at else '—' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+Chart.defaults.font.family = "'Inter', sans-serif";
+
+{% if total_txn > 0 %}
+new Chart(document.getElementById('txnChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['Conformes', 'Bloquées', 'Avertissement'],
+        datasets: [{
+            data: [{{ green_count }}, {{ red_count }}, {{ yellow_count }}],
+            backgroundColor: ['#10b981', '#ef4444', '#f59e0b'],
+            borderColor: ['#ffffff'],
+            borderWidth: 3,
+            hoverOffset: 6
+        }]
+    },
+    options: {
+        cutout: '70%',
+        plugins: {
+            legend: { position: 'bottom', labels: { padding: 16, font: { size: 12, weight: '600' } } }
+        }
+    }
+});
+{% endif %}
+
+new Chart(document.getElementById('alertChart'), {
+    type: 'bar',
+    data: {
+        labels: ['Nouvelles', 'En attente', 'Résolues'],
+        datasets: [{
+            label: 'Alertes',
+            data: [{{ alerts_new }}, {{ alerts_pending }}, {{ alerts_resolved }}],
+            backgroundColor: ['rgba(239,68,68,0.8)', 'rgba(245,158,11,0.8)', 'rgba(16,185,129,0.8)'],
+            borderRadius: 8,
+            borderSkipped: false,
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { beginAtZero: true, ticks: { stepSize: 1, color: '#94a3b8' }, grid: { color: '#f1f5f9' } },
+            x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
+        }
+    }
+});
+</script>
+{% endblock %}
